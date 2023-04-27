@@ -63,3 +63,8 @@ https://data.census.gov/table?t=Income+and+Poverty&g=050XX00US48029,48029$140000
 1. Move 'income.csv' to the repo directory.
 
 Census Tract Shapefile:
+1. Navigate to following link:
+https://www2.census.gov/geo/tiger/TIGER_RD18/STATE/48_TEXAS/48/
+1. Click on the 'tl_rd22_48_tract.zip' link
+1. From the .zip file, select the 'tl_rd22_48_tract' folder.
+1. Move the 'tl_rd22_48_tract' folder to the repo directory.
