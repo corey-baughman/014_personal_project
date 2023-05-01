@@ -17,13 +17,36 @@ import json
 # local modules
 from env import api # import API key
 
+def get_tract_centroids():
+    '''
+    Takes in the 2020 US Census Shapefile for Bexar County,
+    TX and returns a df with geography number, centroid_latitude,
+    and centroid longitude for each geography.
+    See README for instructions to acquire shapefile.
+    
+    Arguments: None.
+    
+    Returns: DataFrame with columns 'geography', 'centroid_lat', 
+    and 'centroid_long'.
+    '''
+    # Load census tract shapefile
+    tracts = gpd.read_file('tl_rd22_48_tract')
+    # select geography, centroid lat, centroid long
+    df = tracts[(tracts.COUNTYFP == '029')]
+    df = df[['TRACTCE', 'INTPTLAT', 'INTPTLON']]
+    df = df.rename(columns={'TRACTCE':'geography', 
+                     'INTPTLAT':'centroid_lat', 'INTPTLON':'centroid_long'})
+    return df
+    
+
 def assign_census_tract(df):
     '''
     This function loads a census tract shapefile
-    and to a DataFrame using geopandas. It then takes
+    to a DataFrame using geopandas. It then takes
     in a DataFrame of latitude and longitude values and
     adds a column indicating what 2020 U.S. Census tract 
-    the location is in. Returns the DataFrame.
+    each location is in or None if the location is not
+    in Bexar County. Returns the DataFrame.
     See README for instructions to acquire shapefile.
     
     Arguments: DataFrame with columns 'latitude' and
@@ -37,18 +60,18 @@ def assign_census_tract(df):
     # convert df into a list of tuples
     coords = df.values.tolist()
     # add census tract column to df
-    df['census_tract'] = 'None'
+    df['census_tract'] = None
     # Create point object
-    for coord in coords:
+    for index, coord in enumerate(coords):
         point = Point(coord[1], coord[0])
         # Check if point is within a census tract
         tract = tracts[tracts.contains(point)]
         # Extract data from corresponding row in dataframe
         if not tract.empty:
             tract_data = tract.iloc[0]
-            df.census_tract = tract_data['NAME']
+            df.loc[index, 'census_tract'] = tract_data['NAME']
         else:
-            df.census_tract = 'outside_bexar_county'
+            df.loc[index, 'census_tract'] = None
             
     return df
 
@@ -88,5 +111,29 @@ def get_bexar_yoga_studios(api):
         lng = result['geometry']['location']['lng']
         coordinates.append((lat, lng))
         
-    # return coordinates as a pandas DataFrame
-    return pd.DataFrame(coordinates, columns=['latitude', 'longitude'])
+    # convert coordinates to a pandas DataFrame
+    df = pd.DataFrame(coordinates, columns=['latitude', 'longitude'])
+    
+    # lookup census tract for each location
+    df = assign_census_tract(df)
+    
+    # remove locations not in Bexar County and standardize
+    # geography names
+    df = clean_yoga_df(df)
+    
+    return df
+
+
+def clean_yoga_df(df):
+    '''
+    Function takes in the output of get_bexar_yoga_studios()
+    and removes any locations that are not in a Bexar County
+    US Census tract. It also converts the census tract names
+    to match the geography names in the census data.
+    '''
+    df = df[df.census_tract != None]
+    df['geography'] = (
+        (df.census_tract.astype('float')) * 100).astype('int').astype('str')
+    df = df.drop(columns='census_tract')
+    
+    return df

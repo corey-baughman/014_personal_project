@@ -1,6 +1,7 @@
 # acquire.py
 import numpy as np
 import pandas as pd
+from location import get_tract_centroids
 
 def get_sex_age_data():
     '''
@@ -22,11 +23,11 @@ def get_sex_age_data():
     # redefine DataFrame as just the desired columns
     df = df[sex_cols]
     # make the column names pythonic and readable
-    df.columns = [col.lower() for col in df.columns]
-    df.columns = [col.replace('!!', '_') for col in df.columns]
-    df.columns = [col.replace('estimate_total_', '') for col in df.columns]
-    df.columns = [col.replace('summary indicators_', '') for col in df.columns]
-    df.columns = [col.replace('total population_', '') for col in df.columns]
+    df = df.rename(columns={'Geography':'geography',
+                            'Estimate!!Total!!Total population':'total_pop', 
+                            'Estimate!!Total!!Total population!!SUMMARY INDICATORS!!Sex ratio (males per 100 females)': 'sex_ratio', 
+                            'Estimate!!Total!!Total population!!SUMMARY INDICATORS!!Old-age dependency ratio':'old_age_dep_ratio', 
+                            'Estimate!!Total!!Total population!!SUMMARY INDICATORS!!Child dependency ratio':'child_dep_ratio'})
     # cut geography to the last six digits which are the census
     # tract id
     df.geography = df.geography.str[-6:]
@@ -51,10 +52,8 @@ def get_race_data():
     # redefine DataFrame as just the desired columns
     df = df[race_cols]
     # make the column names pythonic and readable
-    df.columns = [col.lower() for col in df.columns]
-    df.columns = [col.replace(' !!total:!!', 'total_') for col in df.columns]
-    df.columns = [col.replace(' ', '_') for col in df.columns]
-    
+    df = df.rename(columns={'Geography': 'geography',
+                            ' !!Total:!!Hispanic or Latino':'total_hispanic_latino'})
     # cut geography to the last six digits which are the census
     # tract id
     df.geography = df.geography.str[-6:]
@@ -79,11 +78,8 @@ def get_income_data():
     # redefine DataFrame as just the desired columns
     df = df[income_cols]
     # make the column names pythonic and readable
-    df.columns = [col.lower() for col in df.columns]
-    df.columns = [col.replace('!!', '_') for col in df.columns]
-    df.columns = [col.replace(' !!total:!!', 'total_') for col in df.columns]
-    df.columns = [col.replace(' ', '_') for col in df.columns]
-    df.columns = [col.replace('estimate_', '') for col in df.columns]
+    df = df.rename(columns={'Geography':'geography', 
+                            'Estimate!!Households!!Median income (dollars)':'household_med_income'})
     # cut geography to the last six digits which are the census
     # tract id
     df.geography = df.geography.str[-6:]
@@ -94,12 +90,14 @@ def get_income_data():
 def get_census_data():
     '''
     Function takes in data from get_sex_age_data,
-    get_race_data, and get_income_data and merges
-    them into a single DataFrame.
+    get_race_data, get_income_data and location.get_track_centroids
+    and merges them into a single DataFrame.
     
     Arguments: None
     Returns: DataFrame
     '''
-    df = pd.merge(pd.merge(get_sex_age_data(), get_race_data(), on='geography'), get_income_data(), on='geography')
+    df = pd.merge(pd.merge(pd.merge(get_sex_age_data(), get_race_data(), on='geography'), get_income_data(), on='geography')
+                 , get_tract_centroids(), on='geography')
     
     return df
+
