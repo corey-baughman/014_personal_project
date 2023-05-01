@@ -68,3 +68,10 @@ https://www2.census.gov/geo/tiger/TIGER_RD18/STATE/48_TEXAS/48/
 1. Click on the 'tl_rd22_48_tract.zip' link
 1. From the .zip file, select the 'tl_rd22_48_tract' folder.
 1. Move the 'tl_rd22_48_tract' folder to the repo directory.
+
+env.py file:
+1. You must create a file named env.py in the repo directory.
+1. The file must contain the following line of code with a valid Google Places API key substituted where noted:
+
+``` api = 'Replace with Google Places API key' '''
+
